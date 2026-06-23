@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>香港商業生存大富翁 - 2024真題激戰版</title>
+    <title>香港商業生存大富翁 </title>
     <style>
         :root {
             --board-color: #f7f9fc;
@@ -21,7 +21,18 @@
 
         h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); font-size: 26px; margin-bottom: 10px; }
 
-        /* 11x11 標準40格大富翁佈局 */
+        /* 登入與房間設定區 */
+        .lobby-container {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); text-align: center;
+            margin-bottom: 20px; width: 400px; border: 3px solid var(--cell-border);
+        }
+        .lobby-input {
+            width: 80%; padding: 10px; margin: 10px 0; font-size: 16px;
+            border: 2px solid #74b9ff; border-radius: 6px; text-align: center;
+        }
+
+        /* 11x11 標準大富翁佈局 */
         .monopoly-board {
             display: grid; 
             grid-template-columns: repeat(11, 1fr); 
@@ -30,6 +41,7 @@
             background-color: var(--board-color);
             border: 6px solid var(--cell-border); box-shadow: 0 15px 35px rgba(0,0,0,0.2);
             position: relative; border-radius: 12px;
+            display: none; /* 登入後才顯示 */
         }
 
         .cell {
@@ -44,22 +56,20 @@
         .banner-orange { background-color: #ffa502; } 
         .banner-blue { background-color: #1e90ff; }   
 
-        /* 根據要求：土地名字體大小完美固定為 17px */
         .cell-name {
             flex-grow: 1; display: flex; flex-direction: column; align-items: center;
             justify-content: center; text-align: center; padding: 2px;
-            line-height: 1.2; font-size: 17px; font-weight: bold;
+            line-height: 1.2; font-size: 15px; font-weight: bold;
         }
 
-        .cell-price { font-size: 12px; color: #718093; font-weight: bold; margin-top: 2px; }
+        .cell-price { font-size: 11px; color: #718093; font-weight: bold; margin-top: 2px; }
         .corner-cell { background-color: #fff200; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-        /* 土地擁有權樣式 */
         .owned-tag {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(46, 213, 115, 0.25); border: 3px solid #2ed573;
             box-sizing: border-box; pointer-events: none; display: flex;
-            align-items: center; justify-content: center; font-size: 18px;
+            align-items: center; justify-content: center; font-size: 14px;
             color: #2ed573; font-weight: bold; text-shadow: 1px 1px 2px #fff;
         }
 
@@ -72,24 +82,32 @@
         .center-dashboard {
             grid-column: 2 / 11; grid-row: 2 / 11; background-color: #f1f2f6;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center; border: 4px dashed #ffa502; margin: 15px; border-radius: 12px;
+            padding: 25px; text-align: center; border: 4px dashed #ffa502; margin: 15px; border-radius: 12px;
         }
 
         .status-panel {
-            background: white; padding: 15px 25px; border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.05); margin-bottom: 20px; width: 75%; border: 2px solid #74b9ff;
+            background: white; padding: 12px 20px; border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.05); margin-bottom: 15px; width: 85%; border: 2px solid #74b9ff;
+            font-size: 14px; text-align: left;
         }
 
-        .player-token {
-            width: 24px; height: 24px; background: radial-gradient(circle, #fffa65, #fff200);
-            border-radius: 50%; border: 3px solid #2c3e50; position: absolute;
-            bottom: 4px; right: 4px; z-index: 10; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: all 0.3s ease-in-out;
+        /* 多人玩家棋子樣式 */
+        .token-container {
+            position: absolute; bottom: 2px; right: 2px; display: flex; gap: 2px; flex-wrap: wrap; z-index: 10;
         }
+        .player-token {
+            width: 18px; height: 18px; border-radius: 50%; border: 2px solid #2c3e50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 10px; font-weight: bold;
+            color: white; display: flex; align-items: center; justify-content: center;
+        }
+        .token-p1 { background: #ff4757; }
+        .token-p2 { background: #2ed573; }
+        .token-p3 { background: #1e90ff; }
+        .token-p4 { background: #ffa502; }
 
         .btn {
             background: linear-gradient(135deg, #ff4757, #ff6b81); color: white;
-            border: none; padding: 14px 35px; font-size: 18px; font-weight: bold;
+            border: none; padding: 12px 30px; font-size: 16px; font-weight: bold;
             border-radius: 25px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
         }
         .btn:disabled { background: #ced6e0; cursor: not-allowed; box-shadow: none; }
@@ -100,331 +118,4 @@
         }
 
         .modal {
-            background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 90%;
-            border: 3px solid var(--cell-border); max-height: 85vh; overflow-y: auto;
-        }
-
-        .options-container { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
-        .option-btn {
-            background-color: #f1f2f6; border: 1px solid #ced6e0; padding: 12px;
-            border-radius: 6px; text-align: left; cursor: pointer; font-size: 15px; font-weight: bold;
-        }
-        .option-btn:hover { background-color: #74b9ff; color: white; }
-
-        .explanation-box { margin-top: 12px; padding: 12px; background-color: #f1f2f6; border-left: 5px solid #2ed573; display: none; font-size: 14px; }
-        .wrong-report-box { margin-top: 15px; padding: 15px; background-color: #ffeaa7; border-left: 6px solid #e17055; border-radius: 6px; text-align: left; }
-        .wrong-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #b2bec3; }
-    </style>
-</head>
-<body>
-
-    <h1>✨ 香港商業生存大富翁 (2024 DSE 精準真題版) ✨</h1>
-
-    <div class="monopoly-board" id="board">
-        <div class="center-dashboard">
-            <div class="status-panel">
-                <div>📍 <strong>目前產業地段：</strong> <span id="currentLocName" style="color:#ff4757; font-weight:bold;">準備出發</span></div>
-                <div style="margin-top: 8px;">💰 <strong>營運現金額：</strong> <span id="playerMoney" style="color:#2ed573; font-size:22px; font-weight:bold;">$0</span></div>
-                <div style="margin-top: 5px; font-size:14px; color:#1e90ff;">🏠 <strong>已收購獨特產業：</strong> <span id="landCount" style="font-weight:bold;">0</span> / 32</div>
-            </div>
-            <button class="btn" id="rollBtn" onclick="rollDice()">🎲 擲骰前進</button>
-            <div id="diceResult" style="font-size: 16px; font-weight: bold; margin-top: 10px; color: #ff4757;"></div>
-        </div>
-        <div class="player-token" id="playerToken"></div>
-    </div>
-
-    <div class="modal-overlay" id="quizModal">
-        <div class="modal" id="modalContent">
-            <h3 id="modalCardType" style="margin-top:0; color:#ff4757; border-bottom:2px solid #ced6e0; padding-bottom:5px;">📋 商業考驗</h3>
-            <p id="quizQuestion" style="font-size: 15px; font-weight:bold; color:#2c3e50;"></p>
-            <div class="options-container" id="optionsSpace"></div>
-            
-            <div class="explanation-box" id="explanationSpace">
-                <strong id="resultStatus"></strong><br><br>
-                <div id="qaContent">
-                    <strong>【正確標準答案】：</strong> <span id="correctAnswerStr" style="color:#2ed573; font-weight:bold;"></span><br><br>
-                    <strong>💡 【DSE 官方核心解析】：</strong> <span id="explanationStr"></span>
-                </div>
-                <div id="buyLandSection" style="margin-top:15px; padding-top:15px; border-top:2px dashed #ced6e0; display:none;">
-                    <p style="font-size:15px; font-weight:bold; color:#ff9f43;">🏠 產業購入權解鎖！你想動用資金全資收購此土地嗎？</p>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn" style="background:#2ed573; flex:1;" id="confirmBuyBtn">🤝 出資收購</button>
-                        <button class="btn" style="background:#718093; flex:1;" onclick="closeModal()">❌ 放棄機會</button>
-                    </div>
-                </div>
-            </div>
-            <button class="btn" id="closeModalBtn" style="display:none; width:100%; margin-top:15px;" onclick="closeModal()">繼續前進</button>
-        </div>
-    </div>
-
-    <script>
-        // 完美同步你上傳的 2024 DSE BAFS 試卷一 題目與官方標準答案
-        const businessQuestions = [
-            { q: "下列哪項是商界對香港經濟的貢獻？<br>(1) 銷售貨品與服務到海外以賺取外匯<br>(2) 為本地居民提供就業機會<br>(3) 為政府帶來稅收", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "D", exp: "商界透過出口貿易賺取外匯(1)，作為僱主提供大量工作崗位(2)，並透過繳納利得稅等為政府提供收入(3)，三者皆是主要的經濟貢獻。" },
-            { q: "與採用扁平式架構及規模相若的商號比較，下列哪項有關採用高架式架構的商號的陳述是正確的？<br>(1) 中層管理人員較多。<br>(2) 它能較迅速回應市場轉變。<br>(3) 管理人員監督較少下屬。", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "B", exp: "高架式架構層級較多，因此中層管理人員較多(1)；其控制幅度較窄，意味著每位管理人員監督的下屬較少(3)。迅速回應市場轉變通常是扁平式架構的優點。" },
-            { q: "下列哪項是財務報表的用途？<br>(1) 用作評稅<br>(2) 用作分析商號的財務資訊<br>(3) 用作比較行業中不同商號的財務表現", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "D", exp: "稅務局利用財務報表評定稅項(1)；投資者和管理層利用其分析財務狀況(2)；報表亦提供標準化數據以供與同行比較(3)。" },
-            { q: "下列哪項是自僱人士在強制性公積金（強積金）制度下享有的權利？", options: ["A. 如他們的每月有關入息低於$7100，可以選擇退出強積金計劃。", "B. 他們可每年從強積金計劃提取部分累算權益。", "C. 他們可更改其強積金帳戶的投資組合。", "D. 他們可選擇每季作一次強積金供款。"], ans: "C", exp: "所有強積金計劃成員（包括自僱人士）都有權根據風險偏好更改投資組合。收入低於最低水平僅指無需強制供款，仍須參加計劃。" },
-            { q: "下列哪位是同時關注商號盈利能力和變現能力的財務報表外部使用者？", options: ["A. 高層管理人員", "B. 顧客", "C. 供應商", "D. 政府"], ans: "C", exp: "供應商作為債權人，關注商號的盈利能力以確保長期業務關係，同時極度關注變現能力（流動性）以確保商號能準時支付貨欠。" },
-            { q: "莊力剛畢業並加入廣告公司的創作團隊。上司只提供基本指引，讓莊力最終決定廣告計劃細節。這屬於哪種領導風格及影響？", options: ["A. 民主式……莊力的工作滿足感因而較高", "B. 民主式……團隊成員之間因而合作不足", "C. 自由放任……莊力在工作上會變得被動", "D. 自由放任……莊力在面對挑戰時可能會感到沮喪"], ans: "D", exp: "上司僅給予基本指引並讓下屬自行決定細節，屬於自由放任式。缺乏經驗的下屬（剛畢業）在遇到困難時可能因缺乏支持而感到沮喪。" },
-            { q: "下列哪項有關試算表的陳述是正確的？<br>(1) 它是在期末調整前編製的。<br>(2) 如試算表不平衡，淨利將會出錯。<br>(3) 如結餘轉下顯示在帳戶的借方，這帳戶的結餘會顯示在試算表的借方欄。", options: ["A. 只有 (1)", "B. 只有 (2)", "C. 只有 (1) 及 (3)", "D. 只有 (2) 及 (3)"], ans: "C", exp: "試算表通常在期末調整前編製(1)；帳戶結餘在借方（結餘轉下c/d在貸方，承上結餘b/d在借方）則列於試算表借方(3)。不平衡不一定必然導致淨利出錯。" },
-            { q: "若要維持良好個人信貸紀錄，信用卡用戶應：<br>(1) 盡用其信用卡的信用限額<br>(2) 在使用信用卡前評估自己的還款能力<br>(3) 在繳款期限當日或以前清償信用卡欠款", options: ["A. 只有 (1)", "B. 只有 (2)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "C", exp: "盡用限額可能被視為財務壓力過大，不利於信用評分。評估能力和準時還清欠款才是維持良好紀錄的正確做法。" },
-            { q: "由於「分工」，所以工廠的生產效率得以提升。這是因為：", options: ["A. 省去員工轉換不同工作的時間", "B. 提高不同工作的相互倚賴程度", "C. 有助減少生產程序的延誤", "D. 提高員工士氣"], ans: "A", exp: "分工讓員工專注於單一工序，無需在不同的工具、機器或工作間之間切換，從而省去轉換工作的時間，提升效率。" }
-        ];
-
-        // 40格全新設計：簡短、幽默、不重複的地道香港趣味風格地圖
-        let mapCells = [
-            { name: "🚀<br>創業起點", type: "special" },
-            { name: "無良大樓", type: "red", price: 1200, qIdx: 0 },
-            { name: "血汗物流倉", type: "orange", price: 1400, qIdx: 1 },
-            { name: "黑心小工廠", type: "orange", price: 1600, qIdx: 2 },
-            { name: "⚡<br>市場隨機波動", type: "shock" },
-            { name: "爆肝多媒體", type: "orange", price: 1800, qIdx: 3 },
-            { name: "瘋狂OT城", type: "red", price: 2000, qIdx: 4 },
-            { name: "天台劏房", type: "blue", price: 2200, qIdx: 5 },
-            { name: "韭菜集資處", type: "blue", price: 2400, qIdx: 6 },
-            { name: "涼茶外賣檔", type: "blue", price: 2600, qIdx: 7 },
-            { name: "🛑<br>勞工處合規檢查<br>休息區", type: "special" },
-            { name: "畫餅新創圈", type: "red", price: 1500, qIdx: 8 },
-            { name: "乾炒牛河檔", type: "blue", price: 1700, qIdx: 0 },
-            { name: "萬年打字間", type: "orange", price: 1900, qIdx: 1 },
-            { name: "摸魚大本營", type: "blue", price: 2100, qIdx: 2 },
-            { name: "⚡<br>市場隨機波動", type: "shock" },
-            { name: "地獄補習社", type: "blue", price: 2400, qIdx: 3 },
-            { name: "八卦雜誌社", type: "blue", price: 2600, qIdx: 4 },
-            { name: "水腳外賣店", type: "blue", price: 1800, qIdx: 5 },
-            { name: "蚊型蚊香廠", type: "orange", price: 2000, qIdx: 6 },
-            { name: "🌴<br>年終股東大會<br>免費充電區", type: "special" },
-            { name: "老闆畫餅屋", type: "blue", price: 2800, qIdx: 7 },
-            { name: "伸手黨總部", type: "red", price: 3000, qIdx: 8 },
-            { name: "零福利網店", type: "orange", price: 3200, qIdx: 0 },
-            { name: "快閃特賣場", type: "blue", price: 3500, qIdx: 1 },
-            { name: "⚡<br>市場隨機波動", type: "shock" },
-            { name: "山寨科技園", type: "red", price: 3600, qIdx: 2 },
-            { name: "快遞分發窟", type: "orange", price: 3800, qIdx: 3 },
-            { name: "日夜零售鋪", type: "blue", price: 2400, qIdx: 4 },
-            { name: "貼牌加工廠", type: "orange", price: 2600, qIdx: 5 },
-            { name: "🚨<br>違反消防條例<br>暫停前進一輪", type: "special" },
-            { name: "臨時特賣檔", type: "blue", price: 2200, qIdx: 6 },
-            { name: "蛇王休息站", type: "blue", price: 2400, qIdx: 7 },
-            { name: "劈價散貨場", type: "blue", price: 3000, qIdx: 8 },
-            { name: "呃錢珍奶店", type: "blue", price: 3200, qIdx: 0 },
-            { name: "⚡<br>市場隨機波動", type: "shock" },
-            { name: "天價泊車位", type: "red", price: 4000, qIdx: 1 },
-            { name: "單邊報紙檔", type: "blue", price: 3500, qIdx: 2 },
-            { name: "開荒辦公室", type: "red", price: 2000, qIdx: 3 },
-            { name: "棺材房總部", type: "blue", price: 2200, qIdx: 4 }
-        ];
-
-        let playerPos = 0, playerMoney = 5000; 
-        let currentQuiz = null, isGameOver = false, currentCellPrice = 0;
-        let wrongQuestionsLog = [];
-        let ownedLands = {}; 
-
-        function initBoard() {
-            updateUI();
-            const boardEl = document.getElementById('board');
-            
-            mapCells.forEach((cell, index) => {
-                const cellEl = document.createElement('div');
-                cellEl.className = `cell cell-${index}`;
-                
-                if(cell.type === 'special' || cell.type === 'shock') {
-                    cellEl.classList.add('corner-cell');
-                    if(cell.type === 'shock') cellEl.style.backgroundColor = '#ffeaa7';
-                    cellEl.innerHTML = `<div class="cell-name">${cell.name}</div>`;
-                } else {
-                    let bannerClass = cell.type === 'red' ? 'banner-red' : (cell.type === 'orange' ? 'banner-orange' : 'banner-blue');
-                    cellEl.innerHTML = `
-                        <div class="cell-banner ${bannerClass}"></div>
-                        <div class="cell-name">${cell.name}<span class="cell-price">$${cell.price.toLocaleString()}</span></div>
-                        <div id="owner-${index}"></div>
-                    `;
-                }
-                boardEl.appendChild(cellEl);
-            });
-            moveTokenVisual(0);
-        }
-
-        function updateUI() {
-            document.getElementById('playerMoney').innerText = `$${playerMoney.toLocaleString()}`;
-            document.getElementById('landCount').innerText = Object.keys(ownedLands).length;
-        }
-
-        function rollDice() {
-            if(isGameOver) return;
-            document.getElementById('rollBtn').disabled = true;
-
-            const dice = Math.floor(Math.random() * 6) + 1;
-            document.getElementById('diceResult').innerText = `🎲 骰子點數：${dice} 點！`;
-            playerPos = (playerPos + dice) % mapCells.length;
-            
-            setTimeout(() => {
-                moveTokenVisual(playerPos);
-                document.getElementById('currentLocName').innerText = mapCells[playerPos].name.replace(/<br>/g, ' ');
-                triggerCellEvent(playerPos);
-            }, 400);
-        }
-
-        function moveTokenVisual(pos) {
-            const targetCell = document.querySelector(`.cell-${pos}`);
-            targetCell.appendChild(document.getElementById('playerToken'));
-        }
-
-        function triggerCellEvent(pos) {
-            const cell = mapCells[pos];
-            if (cell.type === 'special') {
-                if(pos === 0) { playerMoney += 1200; alert("🚀 順利路過起點！獲得本季股東注資 $1,200！"); updateUI(); }
-                document.getElementById('rollBtn').disabled = false;
-                return;
-            }
-            if (cell.type === 'shock') {
-                let shockAmt = (Math.floor(Math.random() * 3) + 1) * 600 * (Math.random() > 0.5 ? 1 : -1);
-                playerMoney += shockAmt;
-                
-                document.getElementById('modalCardType').innerText = `⚡ 市場隨機波動`;
-                document.getElementById('quizQuestion').innerHTML = shockAmt > 0 ? `📈 利好消息：公司短片在網絡爆紅，營業額大幅飆升！` : `📉 利淡消息：店舖遭遇無情加租，營運成本增加！`;
-                document.getElementById('optionsSpace').innerHTML = '';
-                
-                const statusEl = document.getElementById('resultStatus');
-                statusEl.innerText = shockAmt > 0 ? `💰 營運現金額增加 $${shockAmt.toLocaleString()}` : `🚨 營運現金額扣除 $${Math.abs(shockAmt).toLocaleString()}`;
-                statusEl.style.color = shockAmt > 0 ? "#2ed573" : "#ff4757";
-                
-                document.getElementById('qaContent').style.display = 'none';
-                document.getElementById('explanationSpace').style.display = 'block';
-                document.getElementById('buyLandSection').style.display = 'none';
-                document.getElementById('closeModalBtn').style.display = 'block';
-                document.getElementById('quizModal').style.display = 'flex';
-                updateUI();
-                return;
-            }
-
-            currentCellPrice = cell.price;
-            currentQuiz = businessQuestions[cell.qIdx];
-
-            // 巡視已收購土地
-            if (ownedLands[pos]) {
-                let rent = Math.round(currentCellPrice * 0.15);
-                playerMoney -= rent;
-                alert(`🏠 這是你的產業【${cell.name.replace(/<br>/g, ' ')}】！內部業務視察，支付維護開支：$${rent}`);
-                updateUI();
-                if(playerMoney <= 0) { gameOver("公司資金鍊徹底斷裂，不幸宣佈結業清盤！"); }
-                else { document.getElementById('rollBtn').disabled = false; }
-                return;
-            }
-
-            showQuizModal(currentQuiz);
-        }
-
-        function showQuizModal(quiz) {
-            document.getElementById('modalCardType').innerText = `🏢 抵達未知產業：「${mapCells[playerPos].name.replace(/<br>/g, ' ')}」`;
-            document.getElementById('quizQuestion').innerHTML = `<strong>完成以下商業生存挑戰，以解鎖該產業的收購權：</strong><br><br>${quiz.q}<br><br><span style='color:#e67e22; font-size:13px;'>💰 產業總收購投資金額：$${currentCellPrice.toLocaleString()}</span>`;
-            
-            const optionsSpace = document.getElementById('optionsSpace');
-            optionsSpace.innerHTML = '';
-            document.getElementById('explanationSpace').style.display = 'none';
-            document.getElementById('buyLandSection').style.display = 'none';
-            document.getElementById('qaContent').style.display = 'block';
-            document.getElementById('closeModalBtn').style.none;
-
-            ['A', 'B', 'C', 'D'].forEach((letter, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.innerText = quiz.options[idx];
-                btn.onclick = () => checkAnswer(letter);
-                optionsSpace.appendChild(btn);
-            });
-            document.getElementById('quizModal').style.display = 'flex';
-        }
-
-        function checkAnswer(userAns) {
-            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
-            const isCorrect = (userAns === currentQuiz.ans);
-            const statusEl = document.getElementById('resultStatus');
-            
-            if (!isCorrect) {
-                if (!wrongQuestionsLog.some(item => item.q === currentQuiz.q)) {
-                    wrongQuestionsLog.push({
-                        q: currentQuiz.q, options: currentQuiz.options, ans: currentQuiz.ans, exp: currentQuiz.exp, location: mapCells[playerPos].name.replace(/<br>/g, ' ')
-                    });
-                }
-                statusEl.innerText = `❌ 決策錯誤！由於商業判定失誤，你失去了購入此產業的資格。`;
-                statusEl.style.color = "#ff4757";
-                document.getElementById('buyLandSection').style.display = 'none';
-                document.getElementById('closeModalBtn').style.display = 'block';
-            } else {
-                statusEl.innerText = `🎉 決策正確！你展現了精準的商業思維，成功解鎖本產業的收購權！`;
-                statusEl.style.color = "#2ed573";
-                
-                if (playerMoney >= currentCellPrice) {
-                    document.getElementById('buyLandSection').style.display = 'block';
-                    document.getElementById('closeModalBtn').style.display = 'none';
-                    
-                    document.getElementById('confirmBuyBtn').onclick = () => {
-                        playerMoney -= currentCellPrice;
-                        ownedLands[playerPos] = true;
-                        
-                        const container = document.getElementById(`owner-${playerPos}`);
-                        container.className = "owned-tag";
-                        container.innerText = "已購";
-                        
-                        alert(`🤝 收購成功！你已將「${mapCells[playerPos].name.replace(/<br>/g, ' ')}」納入你的商業帝國版圖！`);
-                        closeModal();
-                    };
-                } else {
-                    statusEl.innerText += `\n⚠️ 遺憾！你目前的營運資金 ($${playerMoney}) 不足，未能支付收購款項 ($${currentCellPrice})。`;
-                    document.getElementById('buyLandSection').style.display = 'none';
-                    document.getElementById('closeModalBtn').style.display = 'block';
-                }
-            }
-
-            document.getElementById('correctAnswerStr').innerText = currentQuiz.ans;
-            document.getElementById('explanationStr').innerText = currentQuiz.exp;
-            document.getElementById('explanationSpace').style.display = 'block';
-            updateUI();
-        }
-
-        function closeModal() {
-            document.getElementById('quizModal').style.display = 'none';
-            if (playerMoney <= 0) {
-                gameOver("公司現金流歸零，正式宣告破產清盤！");
-            } else {
-                document.getElementById('rollBtn').disabled = false;
-            }
-        }
-
-        function gameOver(message) {
-            isGameOver = true;
-            document.getElementById('rollBtn').disabled = true;
-            const modal = document.getElementById('modalContent');
-            
-            let reportHTML = `
-                <h2 style="color:#d63031; border-bottom:3px solid #d63031; padding-bottom:10px;">💀 【GAME OVER - 商業帝國結算】</h2>
-                <p style="font-size:16px; font-weight:bold; background:#ffeaa7; padding:10px; border-radius:6px;">${message}</p>
-                <h3 style="color:#0984e3; margin-top:20px;">📊 商業弱點檢討報告 (本局共答錯 ${wrongQuestionsLog.length} 題)</h3>
-            `;
-
-            if (wrongQuestionsLog.length === 0) {
-                reportHTML += `<p style="color:#2ed573; font-weight:bold; font-size:16px;">✨ 完美表現！本局沒有答錯任何概念真題，真·商業奇才！</p>`;
-            } else {
-                reportHTML += `<div class="wrong-report-box">`;
-                wrongQuestionsLog.forEach((item, index) => {
-                    reportHTML += `
-                        <div class="wrong-item">
-                            <span style="background:#e17055; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">錯題 ${index + 1}</span> <strong>[觸發地段: ${item.location}]</strong>
-                            <p style="margin:5px 0; font-weight:bold;">${item.q}</p>
-                            <p style="color:#2ed573; font-weight:bold; margin:2px 0;">🔑 官方標準答案: ${item.ans}</p>
-                            <p style="font-size:13px; background:#fff; padding:6px; border-left:3px solid #2ed573; margin:4px 0;"><strong>💡 考點解析:</strong> ${item.exp}</p>
-                        </div>
-                    `;
-                });
-                reportHTML += `</div>`;
-            }
-            reportHTML += `<button class="btn" style="width:100%; margin-top:15px;" onclick="location.reload()">🔄 重新投資開局</button>`;
-            modal.innerHTML = reportHTML;
-            document.getElementById('quizModal').style.display = 'flex';
-        }
-
-        window.onload = initBoard;
-    </script>
-</body>
-</html>
+            background: white; padding: 25px; border-
