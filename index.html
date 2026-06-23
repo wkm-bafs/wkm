@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>香港商業生存大富翁 </title>
+    <title>香港商業生存大富翁 - 2024 DSE 考題連線版</title>
     <style>
         :root { 
             --board-color: #f7f9fc; 
@@ -17,18 +17,19 @@
             display: flex; flex-direction: column; align-items: center; 
             color: var(--text-color); min-height: 100vh; 
         }
-        h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); font-size: 26px; }
+        h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); font-size: 26px; margin-bottom: 5px; }
         
         /* 遊戲大廳設定 */
         .lobby-container { 
             background: white; padding: 25px; border-radius: 12px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.15); text-align: center; 
-            width: 400px; border: 3px solid var(--cell-border); 
+            width: 420px; border: 3px solid var(--cell-border); 
         }
         .lobby-input { 
-            width: 80%; padding: 10px; margin: 10px 0; font-size: 16px; 
+            width: 80%; padding: 10px; margin: 8px 0; font-size: 16px; 
             border: 2px solid #74b9ff; border-radius: 6px; text-align: center; 
         }
+        .room-tip { font-size: 13px; color: #666; margin-top: -4px; margin-bottom: 10px; }
         
         /* 大富翁棋盤網格佈局 */
         .monopoly-board { 
@@ -71,17 +72,30 @@
         .cell-30 { grid-column: 11; grid-row: 1; } .cell-31 { grid-column: 11; grid-row: 2; } .cell-32 { grid-column: 11; grid-row: 3; } .cell-33 { grid-column: 11; grid-row: 4; } .cell-34 { grid-column: 11; grid-row: 5; } .cell-35 { grid-column: 11; grid-row: 6; } .cell-36 { grid-column: 11; grid-row: 7; } .cell-37 { grid-column: 11; grid-row: 8; } .cell-38 { grid-column: 11; grid-row: 9; } .cell-39 { grid-column: 11; grid-row: 10; }
         
         .center-dashboard { grid-column: 2 / 11; grid-row: 2 / 11; background-color: #f1f2f6; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; border: 4px dashed #ffa502; margin: 15px; border-radius: 12px; }
-        .status-panel { background: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; width: 85%; border: 2px solid #74b9ff; font-size: 14px; text-align: left; }
+        .status-panel { background: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 12px; width: 85%; border: 2px solid #74b9ff; font-size: 14px; text-align: left; }
         
-        /* 多人連線棋子樣式 */
-        .token-container { position: absolute; bottom: 2px; right: 2px; display: flex; gap: 2px; flex-wrap: wrap; z-index: 10; }
-        .player-token { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #2c3e50; font-size: 10px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; }
-        .token-p1 { background: #ff4757; } .token-p2 { background: #2ed573; } .token-p3 { background: #1e90ff; } .token-p4 { background: #ffa502; }
+        /* 15 人玩家名單滾動條優化 */
+        .player-list-scroll { max-height: 110px; overflow-y: auto; margin-top: 8px; font-size: 12px; color: #57606f; border-top: 1px solid #f1f2f6; padding-top: 5px; }
+        
+        /* 計時器與控制區 */
+        .timer-banner { background: #2c3e50; color: #fff; padding: 8px 15px; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 10px; width: 85%; letter-spacing: 1px; }
+        .timer-alert { color: #ff4757; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* 多人連線棋子容器 */
+        .token-container { position: absolute; bottom: 2px; right: 2px; left: 2px; display: flex; gap: 2px; flex-wrap: wrap; justify-content: flex-end; z-index: 10; }
+        .player-token { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #2c3e50; font-size: 9px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; }
+        
+        /* 15色棋子專屬背景 */
+        .token-p1 { background: #ff4757; } .token-p2 { background: #2ed573; } .token-p3 { background: #1e90ff; } .token-p4 { background: #ffa502; } .token-p5 { background: #9b59b6; }
+        .token-p6 { background: #34495e; } .token-p7 { background: #16a085; } .token-p8 { background: #e67e22; } .token-p9 { background: #b33939; } .token-p10 { background: #218c74; }
+        .token-p11 { background: #8e44ad; } .token-p12 { background: #2c3e50; } .token-p13 { background: #d35400; } .token-p14 { background: #718093; } .token-p15 { background: #10ac84; }
         
         .btn { background: linear-gradient(135deg, #ff4757, #ff6b81); color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; }
         .btn:disabled { background: #ced6e0; cursor: not-allowed; }
+        .btn-exit { background: #718093; padding: 6px 15px; font-size: 12px; border-radius: 5px; margin-top: 8px; }
         
-        /* 題目彈出視窗樣式 */
+        /* 題目彈出視窗與結算樣式 */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 90%; border: 3px solid var(--cell-border); max-height: 85vh; overflow-y: auto; }
         .options-container { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
@@ -98,24 +112,30 @@
     <h1>✨ 2024 BAFS 試卷一考題 - 多人連線大富翁 ✨</h1>
 
     <div class="lobby-container" id="lobby">
-        <h3>🔑 進入 DSE 考題戰場</h3>
-        <input type="text" id="roomInput" class="lobby-input" placeholder="請輸入房間號碼" value="123"><br>
+        <h3>🔑 進入 DSE 考題戰場 (最高支援 15 人)</h3>
+        <input type="text" id="roomInput" class="lobby-input" placeholder="請輸入房間號碼">
+        <div class="room-tip">💡 已為你自動生成新房間號，同學輸入相同號碼即可加入</div>
         <input type="text" id="nameInput" class="lobby-input" placeholder="請輸入你的名字"><br>
         <button class="btn" style="margin-top:10px; width:85%;" onclick="joinRoom()">連線進入遊戲</button>
     </div>
 
     <div class="monopoly-board" id="board">
         <div class="center-dashboard">
+            <div class="timer-banner" id="gameTimer">⏱️ 剩餘時間：--:--</div>
+
             <div class="status-panel">
                 <div style="font-size:16px; font-weight:bold; color:#1e90ff; margin-bottom:8px; border-bottom:1px dashed #74b9ff; padding-bottom: 5px;">
-                    🏠 房間：<span id="roomDisplay">--</span> | 你是：<span id="identityDisplay" style="color:#ff4757;">未登入</span>
+                    <span>🏠 房間：<span id="roomDisplay">--</span> | 你是：<span id="identityDisplay" style="color:#ff4757;">未登入</span></span>
                 </div>
                 <div>🎲 <strong>當前輪到：</strong> <span id="turnDisplay" style="color:#ff9f43; font-weight:bold;">等待玩家...</span></div>
                 <div style="margin-top: 6px;">💰 <strong>現金資產：</strong> <span id="playerMoney" style="color:#2ed573; font-size:18px; font-weight:bold;">$5,000</span></div>
-                <div id="playerList" style="margin-top:8px; font-size:12px; color: #57606f;"></div>
+                <div id="playerList" class="player-list-scroll"></div>
             </div>
+            
             <button class="btn" id="rollBtn" onclick="rollDice()" disabled>🎲 擲骰前進</button>
-            <div id="diceResult" style="font-size: 15px; font-weight: bold; margin-top: 10px; color: #ff4757;"></div>
+            <div id="diceResult" style="font-size: 15px; font-weight: bold; margin-top: 5px; color: #ff4757;"></div>
+            
+            <button class="btn btn-exit" onclick="exitRoom()">🚪 清除房間並退出</button>
         </div>
     </div>
 
@@ -129,7 +149,7 @@
                 <strong>【正確答案】：</strong> <span id="correctAnswerStr" style="color:#2ed573; font-weight:bold;"></span><br><br>
                 <strong>💡 【官方核心解析】：</strong> <span id="explanationStr"></span>
                 <div id="buyLandSection" style="margin-top:15px; display:none; border-top: 2px dashed #ced6e0; padding-top: 10px;">
-                    <p style="color:#ffa502; font-weight: bold;">📊 項目營運解鎖，你想全資收購此產業嗎？</p>
+                    <p style="color:#ffa502; font-weight: bold;">📊 項目營運解鎖，你想全資收購此產業嗎規定？</p>
                     <button class="btn" style="background:#2ed573; width:45%;" id="confirmBuyBtn">🤝 收購資產</button>
                     <button class="btn" style="background:#718093; width:45%;" onclick="passTurn()">❌ 放棄機會</button>
                 </div>
@@ -138,13 +158,22 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="endGameModal">
+        <div class="modal" style="text-align:center; border: 4px solid #ff4757;">
+            <h2 style="color:#ff4757; margin-top:0;">⏰ 商業生存戰時間到！結算報告</h2>
+            <div id="rankListSpace" style="text-align:left; background:#f1f2f6; padding:15px; border-radius:8px; line-height:1.6; font-size:16px;"></div>
+            <button class="btn" style="margin-top:20px; width:100%;" onclick="location.reload()">重新返回大廳</button>
+        </div>
+    </div>
+
     <script>
         // ------------ 已替換為你專屬的 Firebase 資料庫網址 ------------
-        const firebaseConfig = {
-            databaseURL: "https://game-ded49-default-rtdb.firebaseio.com/" 
-        };
+        const firebaseConfig = { databaseURL: "https://game-ded49-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+
+        // 預設遊戲遊玩限時（600 秒 = 10 分鐘，你可以自由修改成 300 或 900）
+        const GAME_DEFAULT_TIME = 600; 
 
         // 2024 BAFS 試卷一全真題數據庫
         const dse2024Questions = [
@@ -158,7 +187,6 @@
             { q: "若要維持良好個人信貸紀錄，信用卡用戶應：<br>(1) 盡用其信用卡的信用限額<br>(2) 在使用信用卡前評估自己的還款能力<br>(3) 在繳款期限當日或以前清償信用卡欠款", options: ["A. 只有 (1)", "B. 只有 (2)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "C", exp: "盡用限額(1)可能被視為財務壓力過大，不利於信用評分。評估能力(2)和準時還款(3)是正確做法。" }
         ];
 
-        // 棋盤地圖格子配置
         let mapCells = [
             { name: "🚀創業起點", type: "special" },
             { name: "香港商界核心", type: "red", price: 1200, qIdx: 0 },
@@ -173,17 +201,20 @@
             { name: "環球信貸中心", type: "red", price: 2600, qIdx: 7 }
         ];
 
-        let roomRef = null, roomCode = "", myId = "", myName = "", gameState = {}, currentQuiz = null, currentCellPrice = 0;
+        let roomRef = null, roomCode = "", myId = "", myName = "", gameState = {}, currentQuiz = null, currentCellPrice = 0, timerInterval = null;
 
-        // 初始化繪製棋盤
+        // 初始化：自動生成 6 位數隨機房間 Code
         function initBoard() {
+            const randomCode = Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('roomInput').value = randomCode;
+
             const boardEl = document.getElementById('board');
             mapCells.forEach((cell, index) => {
                 const cellEl = document.createElement('div');
                 cellEl.className = `cell cell-${index === 0 ? 0 : index === 4 ? 10 : index === 8 ? 20 : index}`;
                 if(cell.type === 'special') { 
                     cellEl.classList.add('corner-cell'); 
-                    cellEl.innerHTML = `<div>${cell.name}</div>`; 
+                    cellEl.innerHTML = `<div>${cell.name}</div><div id="cell-tokens-${index}" class="token-container"></div>`; 
                 } else {
                     let bc = cell.type === 'red' ? 'banner-red' : (cell.type === 'orange' ? 'banner-orange' : 'banner-blue');
                     cellEl.innerHTML = `<div class="cell-banner ${bc}"></div><div class="cell-name">${cell.name}<span class="cell-price">$${cell.price}</span></div><div id="owner-${index}"></div><div id="cell-tokens-${index}" class="token-container"></div>`;
@@ -201,16 +232,28 @@
             roomRef = database.ref('rooms/' + roomCode);
             roomRef.once('value', (snapshot) => {
                 let data = snapshot.val();
-                if (!data) {
+                
+                // 重設清空機制：若房間內沒有活躍玩家，代表是第一個進入的人，徹底覆蓋清空舊資料並自動開啟計時
+                if (!data || !data.players) {
                     myId = "p1"; 
-                    gameState = { currentTurn: "p1", players: { p1: { name: myName, money: 5000, pos: 0, id: "p1" } } };
-                    roomRef.set(gameState);
+                    gameState = { 
+                        currentTurn: "p1", 
+                        timeRemaining: GAME_DEFAULT_TIME,
+                        players: { p1: { name: myName, money: 5000, pos: 0, id: "p1" } } 
+                    };
+                    roomRef.set(gameState).then(() => {
+                        startRoomTimer(); // 第一個進入的人負責啟動 Firebase 後台的扣秒
+                    });
                 } else {
                     let pKeys = Object.keys(data.players || {});
-                    if(pKeys.length >= 4) return alert("該房間人數已滿！");
-                    myId = "p" + (pKeys.length + 1);
+                    if(pKeys.length >= 15) return alert("該房間人數已滿（上限 15 人）！");
+                    
+                    let nextNum = 1;
+                    while(data.players && data.players["p" + nextNum]) { nextNum++; }
+                    myId = "p" + nextNum;
                     roomRef.child('players/' + myId).set({ name: myName, money: 5000, pos: 0, id: myId });
                 }
+                
                 document.getElementById('lobby').style.display = 'none';
                 document.getElementById('board').style.display = 'grid';
                 document.getElementById('roomDisplay').innerText = roomCode;
@@ -219,34 +262,70 @@
             });
         }
 
-        // 即時資料監聽器
+        // 第一個玩家自動啟動後台計時扣秒
+        function startRoomTimer() {
+            timerInterval = setInterval(() => {
+                roomRef.child('timeRemaining').transaction((current) => {
+                    if (current === null) return GAME_DEFAULT_TIME;
+                    if (current <= 1) {
+                        clearInterval(timerInterval);
+                        return 0;
+                    }
+                    return current - 1;
+                });
+            }, 1000);
+        }
+
+        // 同步狀態監聽器
         function startSyncListener() {
             roomRef.on('value', (snapshot) => {
-                const data = snapshot.val(); if(!data) return; gameState = data;
+                const data = snapshot.val(); if(!data || !data.players) return; gameState = data;
+                
+                // 1. 同步處理即時倒數時間呈現
+                let mins = Math.floor(gameState.timeRemaining / 60);
+                let secs = gameState.timeRemaining % 60;
+                let timerBanner = document.getElementById('gameTimer');
+                
+                timerBanner.innerText = `⏱️ 剩餘時間：${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                if(gameState.timeRemaining <= 60) { timerBanner.classList.add('timer-alert'); }
+
+                // 時間到，強制執行結算
+                if(gameState.timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('rollBtn').disabled = true;
+                    showEndGameRank();
+                    return;
+                }
+
+                // 2. 判斷輪流順序
                 const isMyTurn = (gameState.currentTurn === myId);
                 document.getElementById('turnDisplay').innerText = gameState.players[gameState.currentTurn]?.name || "等待中";
                 document.getElementById('rollBtn').disabled = !isMyTurn;
                 if(gameState.players[myId]) document.getElementById('playerMoney').innerText = `$${gameState.players[myId].money}`;
                 
+                // 3. 渲染玩家右側列表
                 let listHTML = "";
                 Object.keys(gameState.players).forEach(pId => {
                     let p = gameState.players[pId];
-                    listHTML += `<div style="margin-bottom: 3px;"><b>${p.name}</b>: $${p.money} (位置:${p.pos})${pId === gameState.currentTurn ? ' 🎲' : ''}</div>`;
+                    listHTML += `<div style="margin-bottom: 3px;"><b>${p.name}</b> (${pId.toUpperCase()}): $${p.money} (位置:${p.pos})${pId === gameState.currentTurn ? ' 🎲' : ''}</div>`;
                 });
                 document.getElementById('playerList').innerHTML = listHTML;
 
+                // 4. 更新地圖棋子
                 mapCells.forEach((_, idx) => { const c = document.getElementById(`cell-tokens-${idx}`); if(c) c.innerHTML = ""; });
                 Object.keys(gameState.players).forEach(pId => {
                     const c = document.getElementById(`cell-tokens-${gameState.players[pId].pos}`);
-                    if(c) c.innerHTML += `<div class="player-token token-${pId}">${pId.toUpperCase()}</div>`;
+                    if(c) c.innerHTML += `<div class="player-token token-${pId}" title="${gameState.players[pId].name}">${pId.substring(1)}</div>`;
                 });
 
+                // 5. 更新土地產權標籤
+                mapCells.forEach((_, idx) => { const label = document.getElementById(`owner-${idx}`); if(label) { label.className = ""; label.innerHTML = ""; } });
                 if(gameState.ownedLands) {
                     Object.keys(gameState.ownedLands).forEach(cellIdx => {
                         const label = document.getElementById(`owner-${cellIdx}`);
                         if(label) { 
                             label.className = "owned-tag"; 
-                            label.innerHTML = `<span style="font-size:10px; background:rgba(0,0,0,0.6); color:white; padding:1px 3px; border-radius:3px;">${gameState.players[gameState.ownedLands[cellIdx]]?.name || ""}</span>`; 
+                            label.innerHTML = `<span style="font-size:10px; background:rgba(0,0,0,0.6); color:white; padding:1px 3px; border-radius:3px;">${gameState.players[gameState.ownedLands[cellIdx]]?.name || "已購"}</span>`; 
                         }
                     });
                 }
@@ -263,7 +342,6 @@
             roomRef.child(`players/${myId}`).update({ pos: nextPos, money: money }).then(() => { triggerCellEvent(nextPos); });
         }
 
-        // 觸發格子事件
         function triggerCellEvent(pos) {
             const cell = mapCells[pos];
             if (cell.type === 'special') return passTurn();
@@ -283,7 +361,6 @@
             showQuizModal(currentQuiz);
         }
 
-        // 彈出答題介面
         function showQuizModal(quiz) {
             document.getElementById('quizQuestion').innerHTML = quiz.q;
             const os = document.getElementById('optionsSpace'); os.innerHTML = '';
@@ -314,12 +391,58 @@
             document.getElementById('quizModal').style.display = 'flex';
         }
 
-        // 結束回合，交出輪替權
         function passTurn() {
             document.getElementById('quizModal').style.display = 'none';
+            document.getElementById('buyLandSection').style.display = 'none';
             let pKeys = Object.keys(gameState.players);
-            let nextId = pKeys[(pKeys.indexOf(myId) + 1) % pKeys.length];
+            let currentIndex = pKeys.indexOf(myId);
+            let nextId = pKeys[(currentIndex + 1) % pKeys.length];
             roomRef.update({ currentTurn: nextId });
+        }
+
+        // 終局財富資產總值結算
+        function showEndGameRank() {
+            let leaderboard = [];
+            Object.keys(gameState.players).forEach(pId => {
+                let p = gameState.players[pId];
+                let landValue = 0;
+                if(gameState.ownedLands) {
+                    Object.keys(gameState.ownedLands).forEach(cellIdx => {
+                        if(gameState.ownedLands[cellIdx] === pId) {
+                            landValue += mapCells[parseInt(cellIdx)].price;
+                        }
+                    });
+                }
+                leaderboard.push({ name: p.name, totalAsset: p.money + landValue, cash: p.money, land: landValue });
+            });
+
+            leaderboard.sort((a, b) => b.totalAsset - a.totalAsset);
+
+            let rankHTML = "";
+            leaderboard.forEach((player, index) => {
+                let medal = index === 0 ? "🏆 冠軍" : (index === 1 ? "🥈 亞軍" : (index === 2 ? "🥉 季軍" : `第 ${index+1} 名`));
+                rankHTML += `<div style="padding: 5px 0; border-bottom: 1px solid #ccc;">
+                    <strong>${medal}: ${player.name}</strong><br>
+                    💰 總資產淨值: $${player.totalAsset} (現金: $${player.cash} | 產權市值: $${player.land})
+                </div>`;
+            });
+            document.getElementById('rankListSpace').innerHTML = rankHTML;
+            document.getElementById('endGameModal').style.display = 'flex';
+        }
+
+        // 離開房間：清除自己在 Firebase 上的節點，若為最後一人則抹除整個房間
+        function exitRoom() {
+            if(confirm("確定要清除資料並退出遊戲嗎？")) {
+                clearInterval(timerInterval);
+                if (roomRef && myId) {
+                    roomRef.child('players/' + myId).remove().then(() => {
+                        roomRef.child('players').once('value', (snap) => {
+                            if(!snap.exists()) { roomRef.remove(); }
+                            location.reload();
+                        });
+                    });
+                } else { location.reload(); }
+            }
         }
 
         window.onload = initBoard;
