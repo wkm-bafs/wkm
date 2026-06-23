@@ -118,4 +118,423 @@
         }
 
         .modal {
-            background: white; padding: 25px; border-
+            background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 90%;
+            border: 3px solid var(--cell-border); max-height: 85vh; overflow-y: auto;
+        }
+
+        .options-container { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
+        .option-btn {
+            background-color: #f1f2f6; border: 1px solid #ced6e0; padding: 12px;
+            border-radius: 6px; text-align: left; cursor: pointer; font-size: 15px; font-weight: bold;
+        }
+        .option-btn:hover { background-color: #74b9ff; color: white; }
+
+        .explanation-box { margin-top: 12px; padding: 12px; background-color: #f1f2f6; border-left: 5px solid #2ed573; display: none; font-size: 14px; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <h1>✨ 香港商業生存大富翁 (多人連線即時對戰版) ✨</h1>
+
+    <div class="lobby-container" id="lobby">
+        <h3>🔑 進入商業戰場</h3>
+        <input type="text" id="roomInput" class="lobby-input" placeholder="請輸入房間號碼 (例如: 888)" value="888"><br>
+        <input type="text" id="nameInput" class="lobby-input" placeholder="請輸入你的名字" maxlength="10"><br>
+        <button class="btn" style="margin-top:10px; width:85%;" onclick="joinRoom()">連線進入遊戲</button>
+    </div>
+
+    <div class="monopoly-board" id="board">
+        <div class="center-dashboard">
+            <div class="status-panel">
+                <div style="font-size:16px; font-weight:bold; color:#1e90ff; margin-bottom:8px; border-bottom:1px dashed #74b9ff; padding-bottom:5px;">
+                    🏠 房間：<span id="roomDisplay">--</span> | 你是：<span id="identityDisplay" style="color:#ff4757;">未登入</span>
+                </div>
+                <div>🎲 <strong>當前回合精神領袖：</strong> <span id="turnDisplay" style="color:#ff9f43; font-weight:bold;">等待玩家中...</span></div>
+                <div style="margin-top: 6px;">💰 <strong>我的營運現金額：</strong> <span id="playerMoney" style="color:#2ed573; font-size:18px; font-weight:bold;">$5,000</span></div>
+                <div style="margin-top: 4px;">📊 <strong>當前玩家清單與資產：</strong><div id="playerList" style="margin-top:4px; font-size:12px; color:#57606f;"></div></div>
+            </div>
+            <button class="btn" id="rollBtn" onclick="rollDice()" disabled>🎲 擲骰前進</button>
+            <div id="diceResult" style="font-size: 15px; font-weight: bold; margin-top: 10px; color: #ff4757;"></div>
+        </div>
+        <div id="tokensDeploySpace"></div>
+    </div>
+
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal" id="modalContent">
+            <h3 id="modalCardType" style="margin-top:0; color:#ff4757; border-bottom:2px solid #ced6e0; padding-bottom:5px;">📋 商業考驗</h3>
+            <p id="quizQuestion" style="font-size: 15px; font-weight:bold; color:#2c3e50;"></p>
+            <div class="options-container" id="optionsSpace"></div>
+            
+            <div class="explanation-box" id="explanationSpace">
+                <strong id="resultStatus"></strong><br><br>
+                <div id="qaContent">
+                    <strong>【正確標準答案】：</strong> <span id="correctAnswerStr" style="color:#2ed573; font-weight:bold;"></span><br><br>
+                    <strong>💡 【DSE 官方核心解析】：</strong> <span id="explanationStr"></span>
+                </div>
+                <div id="buyLandSection" style="margin-top:15px; padding-top:15px; border-top:2px dashed #ced6e0; display:none;">
+                    <p style="font-size:15px; font-weight:bold; color:#ff9f43;">🏠 產業購入權解鎖！你想全資收購此土地嗎？</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn" style="background:#2ed573; flex:1;" id="confirmBuyBtn">🤝 出資收購</button>
+                        <button class="btn" style="background:#718093; flex:1;" onclick="passTurn()">❌ 放棄機會</button>
+                    </div>
+                </div>
+            </div>
+            <button class="btn" id="closeModalBtn" style="display:none; width:100%; margin-top:15px;" onclick="passTurn()">結束回合</button>
+        </div>
+    </div>
+
+    <script>
+        // ------------ Firebase 初始化設定 ------------
+        // 這是公開測試用的 Firebase 即時資料庫配置，可直接免費用於班級教學連線
+        const firebaseConfig = {
+            databaseURL: "https://bafs-monopoly-default-rtdb.firebaseio.com/" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // ------------ 核心題目庫 ------------
+        const businessQuestions = [
+            { q: "下列哪項是商界對香港經濟的貢獻？<br>(1) 銷售貨品與服務到海外以賺取外匯<br>(2) 為本地居民提供就業機會<br>(3) 為政府帶來稅收", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "D", exp: "商界透過出口貿易賺取外匯(1)，提供工作崗位(2)，並繳納稅收(3)，三者皆是核心經濟貢獻。" },
+            { q: "與採用扁平式架構及規模相若的商號比較，下列哪項有關採用高架式架構的商號的陳述是正確的？<br>(1) 中層管理人員較多。<br>(2) 它能較迅速回應市場轉變。<br>(3) 管理人員監督較少下屬。", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "B", exp: "高架式架構層級較多，因此中層人員較多(1)；其控制幅度較窄，意味著每位管理人員監督的下屬較少(3)。" },
+            { q: "下列哪項是財務報表的用途？<br>(1) 用作評稅<br>(2) 用作分析商號的財務資訊<br>(3) 用作比較行業中不同商號的財務表現", options: ["A. 只有 (1) 及 (2)", "B. 只有 (1) 及 (3)", "C. 只有 (2) 及 (3)", "D. (1)、(2) 及 (3)"], ans: "D", exp: "稅務局利用財務報表評稅(1)；管理層用於分析財務狀況(2)；報表亦提供標準化數據以供同行比較(3)。" },
+            { q: "下列哪項是自僱人士在強制性公積金（強積金）制度下享有的權利？", options: ["A. 如他們的每月有關入息低於$7100，可以選擇退出強積金計劃。", "B. 他們可每年從強積金計劃提取部分累算權益。", "C. 他們可更改其強積金帳戶的投資組合。", "D. 他們可選擇每季作一次強積金供款。"], ans: "C", exp: "所有強積金計劃成員都有權根據風險偏好更改投資組合。收入低於最低水平僅指無需強制供款，仍須參加計劃。" },
+            { q: "下列哪位是同時關注商號盈利能力和變現能力的財務報表外部使用者？", options: ["A. 高層管理人員", "B. 顧客", "C. 供應商", "D. 政府"], ans: "C", exp: "供應商關注商號的盈利能力以確保長期業務關係，同時極度關注變現能力（流動性）以確保能準時收回貨欠。" },
+            { q: "由於「分工」，所以工廠的生產效率得以提升。這是因為：", options: ["A. 省去員工轉換不同工作的時間", "B. 提高不同工作的相互倚賴程度", "C. 有助減少生產程序的延誤", "D. 提高員工士氣"], ans: "A", exp: "分工讓工人專注單一工序，省去了在不同工具、崗位之間切換的時間，提高整體產出效率。" }
+        ];
+
+        // 40格地圖數據
+        let mapCells = [
+            { name: "🚀<br>創業起點", type: "special" },
+            { name: "無良大樓", type: "red", price: 1200, qIdx: 0 },
+            { name: "血汗物流倉", type: "orange", price: 1400, qIdx: 1 },
+            { name: "黑心小工廠", type: "orange", price: 1600, qIdx: 2 },
+            { name: "狂加租商場", type: "red", price: 1700, qIdx: 3 }, 
+            { name: "爆肝多媒體", type: "orange", price: 1800, qIdx: 4 },
+            { name: "瘋狂OT城", type: "red", price: 2000, qIdx: 5 },
+            { name: "天台劏房", type: "blue", price: 2200, qIdx: 0 },
+            { name: "韭菜集資處", type: "blue", price: 2400, qIdx: 1 },
+            { name: "涼茶外賣檔", type: "blue", price: 2600, qIdx: 2 },
+            { name: "🛑<br>勞工處檢查<br>休息區", type: "special" },
+            { name: "畫餅新創圈", type: "red", price: 1500, qIdx: 3 },
+            { name: "乾炒牛河檔", type: "blue", price: 1700, qIdx: 4 },
+            { name: "萬年打字間", type: "orange", price: 1900, qIdx: 5 },
+            { name: "摸魚大本營", type: "blue", price: 2100, qIdx: 0 },
+            { name: "連鎖大財團", type: "red", price: 2300, qIdx: 1 }, 
+            { name: "地獄補習社", type: "blue", price: 2400, qIdx: 2 },
+            { name: "八卦雜誌社", type: "blue", price: 2600, qIdx: 3 },
+            { name: "水腳外賣店", type: "blue", price: 1800, qIdx: 4 },
+            { name: "蚊型蚊香廠", type: "orange", price: 2000, qIdx: 5 },
+            { name: "🌴<br>股東大會<br>免費充電區", type: "special" },
+            { name: "老闆畫餅屋", type: "blue", price: 2800, qIdx: 0 },
+            { name: "伸手黨總部", type: "red", price: 3000, qIdx: 1 },
+            { name: "零福利網店", type: "orange", price: 3200, qIdx: 2 },
+            { name: "快閃特賣場", type: "blue", price: 3500, qIdx: 3 },
+            { name: "零保障外判", type: "orange", price: 3400, qIdx: 4 }, 
+            { name: "山寨科技園", type: "red", price: 3600, qIdx: 5 },
+            { name: "快遞分發窟", type: "orange", price: 3800, qIdx: 0 },
+            { name: "日夜零售鋪", type: "blue", price: 2400, qIdx: 1 },
+            { name: "貼牌加工廠", type: "orange", price: 2600, qIdx: 2 },
+            { name: "🚨<br>違反消防條例<br>暫停一輪", type: "special" },
+            { name: "臨時特賣檔", type: "blue", price: 2200, qIdx: 3 },
+            { name: "蛇王休息站", type: "blue", price: 2400, qIdx: 4 },
+            { name: "劈價散貨場", type: "blue", price: 3000, qIdx: 5 },
+            { name: "呃錢珍奶店", type: "blue", price: 3200, qIdx: 0 },
+            { name: "貼牌加工廠", type: "orange", price: 3300, qIdx: 1 }, 
+            { name: "天價泊車位", type: "red", price: 4000, qIdx: 2 },
+            { name: "單邊報紙檔", type: "blue", price: 3500, qIdx: 3 },
+            { name: "開荒辦公室", type: "red", price: 2000, qIdx: 4 },
+            { name: "棺材房總部", type: "blue", price: 2200, qIdx: 5 }
+        ];
+
+        // ------------ 連線全域變數 ------------
+        let roomRef = null;
+        let roomCode = "";
+        let myId = "";       // 例如 "p1", "p2"
+        let myName = "";     // 玩家輸入的名字
+        let gameState = {
+            currentTurn: "p1",
+            players: {},
+            ownedLands: {}
+        };
+        let currentQuiz = null;
+        let currentCellPrice = 0;
+
+        // ------------ 初始化地圖 (與舊版相同) ------------
+        function initBoard() {
+            const boardEl = document.getElementById('board');
+            mapCells.forEach((cell, index) => {
+                const cellEl = document.createElement('div');
+                cellEl.className = `cell cell-${index}`;
+                
+                if(cell.type === 'special') {
+                    cellEl.classList.add('corner-cell');
+                    cellEl.innerHTML = `<div class="cell-name">${cell.name}</div>`;
+                } else {
+                    let bannerClass = cell.type === 'red' ? 'banner-red' : (cell.type === 'orange' ? 'banner-orange' : 'banner-blue');
+                    cellEl.innerHTML = `
+                        <div class="cell-banner ${bannerClass}"></div>
+                        <div class="cell-name">${cell.name}<span class="cell-price">$${cell.price.toLocaleString()}</span></div>
+                        <div id="owner-${index}"></div>
+                        <div id="cell-tokens-${index}" class="token-container"></div>
+                    `;
+                }
+                boardEl.appendChild(cellEl);
+            });
+        }
+
+        // ------------ 登入與加入房間流程 ------------
+        function joinRoom() {
+            roomCode = document.getElementById('roomInput').value.trim();
+            myName = document.getElementById('nameInput').value.trim();
+
+            if(!roomCode || !myName) {
+                alert("請填寫房間號碼及名字！");
+                return;
+            }
+
+            roomRef = database.ref('rooms/' + roomCode);
+
+            // 先讀取房間現狀，決定自己的玩家編號 (p1 ~ p4)
+            roomRef.once('value', (snapshot) => {
+                let data = snapshot.val();
+                if (!data) {
+                    // 房間不存在，自己就是房主 p1
+                    myId = "p1";
+                    gameState.players[myId] = { name: myName, money: 5000, pos: 0, id: myId };
+                    gameState.currentTurn = "p1";
+                    roomRef.set(gameState);
+                } else {
+                    // 房間已存在，分配新位置
+                    let currentPlayers = data.players || {};
+                    let pKeys = Object.keys(currentPlayers);
+                    if (pKeys.length >= 4) {
+                        alert("該房間已滿（最多4人）！");
+                        return;
+                    }
+                    // 找一個未被佔用的代號
+                    for(let i=1; i<=4; i++) {
+                        if(!currentPlayers["p" + i]) {
+                            myId = "p" + i;
+                            break;
+                        }
+                    }
+                    // 寫入自己的初始資料
+                    roomRef.child('players/' + myId).set({ name: myName, money: 5000, pos: 0, id: myId });
+                }
+
+                // 成功登入，切換介面
+                document.getElementById('lobby').style.display = 'none';
+                document.getElementById('board').style.display = 'grid';
+                document.getElementById('roomDisplay').innerText = roomCode;
+                document.getElementById('identityDisplay').innerText = `${myName} (玩家 ${myId.toUpperCase()})`;
+                
+                // 開啟 Firebase 即時監聽監控
+                startSyncListener();
+            });
+        }
+
+        // ------------ 核心：即時監聽與畫面渲染 ------------
+        function startSyncListener() {
+            roomRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if(!data) return;
+                gameState = data;
+
+                // 1. 更新回合與控制按鈕
+                const isMyTurn = (gameState.currentTurn === myId);
+                document.getElementById('turnDisplay').innerText = gameState.players[gameState.currentTurn] ? `${gameState.players[gameState.currentTurn].name} (${gameState.currentTurn.toUpperCase()})` : "等待中";
+                document.getElementById('rollBtn').disabled = !isMyTurn;
+
+                // 2. 更新我的現金餘額
+                if(gameState.players[myId]) {
+                    document.getElementById('playerMoney').innerText = `$${gameState.players[myId].money.toLocaleString()}`;
+                }
+
+                // 3. 更新右側所有玩家狀態清單
+                let listHTML = "";
+                Object.keys(gameState.players).forEach(pId => {
+                    let p = gameState.players[pId];
+                    let turnMark = (pId === gameState.currentTurn) ? " 🎲" : "";
+                    listHTML += `<div style="margin-bottom:3px;"><span class="player-token token-${pId}" style="display:inline-block; position:static; width:12px; height:12px; margin-right:4px;"></span><b>${p.name}</b>: $${p.money.toLocaleString()} (位置:${p.pos})${turnMark}</div>`;
+                });
+                document.getElementById('playerList').innerHTML = listHTML;
+
+                // 4. 重繪地圖上所有玩家的棋子
+                // 先清空所有格子的棋子容器
+                mapCells.forEach((_, idx) => {
+                    let container = document.getElementById(`cell-tokens-${idx}`);
+                    if(container) container.innerHTML = "";
+                });
+                // 重新放入各玩家
+                Object.keys(gameState.players).forEach(pId => {
+                    let p = gameState.players[pId];
+                    let container = document.getElementById(`cell-tokens-${p.pos}`);
+                    if(container) {
+                        container.innerHTML += `<div class="player-token token-${pId}">${pId.toUpperCase()}</div>`;
+                    }
+                });
+
+                // 5. 更新土地收購標籤
+                if(gameState.ownedLands) {
+                    Object.keys(gameState.ownedLands).forEach(cellIdx => {
+                        let ownerId = gameState.ownedLands[cellIdx];
+                        let ownerName = gameState.players[ownerId] ? gameState.players[ownerId].name : "未知";
+                        let label = document.getElementById(`owner-${cellIdx}`);
+                        if(label) {
+                            label.className = "owned-tag";
+                            label.innerHTML = `<span style="font-size:10px; background:rgba(0,0,0,0.6); color:white; padding:1px 3px; border-radius:3px;">${ownerName}</span>`;
+                        }
+                    });
+                }
+            });
+        }
+
+        // ------------ 擲骰動作 (同步到 Firebase) ------------
+        function rollDice() {
+            const dice = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('diceResult').innerText = `🎲 你擲出了：${dice} 點！`;
+            
+            let currentPos = gameState.players[myId].pos;
+            let nextPos = (currentPos + dice) % mapCells.length;
+
+            // 如果經過起點，加錢
+            let currentMoney = gameState.players[myId].money;
+            if (nextPos < currentPos) {
+                currentMoney += 1200;
+                alert("🚀 順利路過起點！獲得本季基本注資 $1,200！");
+            }
+
+            // 更新自己的位置與金額到雲端
+            roomRef.child(`players/${myId}`).update({
+                pos: nextPos,
+                money: currentMoney
+            }).then(() => {
+                // 觸發本地格子事件
+                triggerCellEvent(nextPos);
+            });
+        }
+
+        // ------------ 格子事件處理 ------------
+        function triggerCellEvent(pos) {
+            const cell = mapCells[pos];
+            
+            // 功能格直接跳過
+            if (cell.type === 'special') {
+                passTurn();
+                return;
+            }
+
+            currentCellPrice = cell.price;
+            currentQuiz = businessQuestions[cell.qIdx];
+
+            // 檢查是否已被其他人購買
+            if (gameState.ownedLands && gameState.ownedLands[pos]) {
+                let ownerId = gameState.ownedLands[pos];
+                if (ownerId === myId) {
+                    alert(`🏠 這是你自己的產業【${cell.name.replace(/<br>/g, ' ')}】！內部巡視。`);
+                    passTurn();
+                } else {
+                    // 付過路費/營運維護費給地主
+                    let rent = Math.round(currentCellPrice * 0.15);
+                    let myMoney = gameState.players[myId].money - rent;
+                    let ownerMoney = gameState.players[ownerId].money + rent;
+
+                    alert(`⚠️ 踩到 <b>${gameState.players[ownerId].name}</b> 的產業【${cell.name.replace(/<br>/g, ' ')}】！支付營運開支：$${rent}`);
+                    
+                    // 同步扣錢與加錢
+                    roomRef.child(`players/${myId}`).update({ money: myMoney });
+                    roomRef.child(`players/${ownerId}`).update({ money: ownerMoney });
+                    
+                    passTurn();
+                }
+                return;
+            }
+
+            // 未被購買，跳出挑戰視窗
+            showQuizModal(currentQuiz);
+        }
+
+        function showQuizModal(quiz) {
+            document.getElementById('modalCardType').innerText = `🏢 抵達未知產業：「${mapCells[gameState.players[myId].pos].name.replace(/<br>/g, ' ')}」`;
+            document.getElementById('quizQuestion').innerHTML = `<strong>完成商業生存挑戰以解鎖收購權：</strong><br><br>${quiz.q}<br><br><span style='color:#e67e22; font-size:13px;'>💰 收購投資額：$${currentCellPrice.toLocaleString()}</span>`;
+            
+            const optionsSpace = document.getElementById('optionsSpace');
+            optionsSpace.innerHTML = '';
+            document.getElementById('explanationSpace').style.display = 'none';
+            document.getElementById('buyLandSection').style.display = 'none';
+            document.getElementById('closeModalBtn').style.display = 'none';
+
+            ['A', 'B', 'C', 'D'].forEach((letter, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = quiz.options[idx];
+                btn.onclick = () => checkAnswer(letter);
+                optionsSpace.appendChild(btn);
+            });
+            document.getElementById('quizModal').style.display = 'flex';
+        }
+
+        function checkAnswer(userAns) {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            const isCorrect = (userAns === currentQuiz.ans);
+            const statusEl = document.getElementById('resultStatus');
+            
+            if (!isCorrect) {
+                statusEl.innerText = `❌ 決策錯誤！判定失誤，失去了購入資格。`;
+                statusEl.style.color = "#ff4757";
+                document.getElementById('buyLandSection').style.display = 'none';
+                document.getElementById('closeModalBtn').style.display = 'block';
+            } else {
+                statusEl.innerText = `🎉 決策正確！成功解鎖本產業的收購權！`;
+                statusEl.style.color = "#2ed573";
+                
+                let myMoney = gameState.players[myId].money;
+                if (myMoney >= currentCellPrice) {
+                    document.getElementById('buyLandSection').style.display = 'block';
+                    document.getElementById('closeModalBtn').style.display = 'none';
+                    
+                    document.getElementById('confirmBuyBtn').onclick = () => {
+                        let finalMoney = myMoney - currentCellPrice;
+                        let pos = gameState.players[myId].pos;
+                        
+                        // 同步土地業權與扣錢到 Firebase
+                        roomRef.child(`players/${myId}`).update({ money: finalMoney });
+                        roomRef.child(`ownedLands/${pos}`).set(myId);
+                        
+                        alert(`🤝 收購成功！「${mapCells[pos].name.replace(/<br>/g, ' ')}」已納入你的版圖！`);
+                        document.getElementById('quizModal').style.display = 'none';
+                        passTurn();
+                    };
+                } else {
+                    statusEl.innerText += `\n⚠️ 現金流不足 ($${myMoney})，無法支付款項 ($${currentCellPrice})。`;
+                    document.getElementById('buyLandSection').style.display = 'none';
+                    document.getElementById('closeModalBtn').style.display = 'block';
+                }
+            }
+
+            document.getElementById('correctAnswerStr').innerText = currentQuiz.ans;
+            document.getElementById('explanationStr').innerText = currentQuiz.exp;
+            document.getElementById('explanationSpace').style.display = 'block';
+        }
+
+        // ------------ 切換到下一個人的回合 ------------
+        function passTurn() {
+            document.getElementById('quizModal').style.display = 'none';
+            
+            // 找出下一個就緒的玩家
+            let pKeys = Object.keys(gameState.players);
+            let currentIdx = pKeys.indexOf(myId);
+            let nextIdx = (currentIdx + 1) % pKeys.length;
+            let nextPlayerId = pKeys[nextIdx];
+
+            // 將下一回合更新到雲端，其他人的網頁偵測到就會自動解鎖
+            roomRef.update({ currentTurn: nextPlayerId });
+        }
+
+        window.onload = initBoard;
+    </script>
+</body>
+</html>
